@@ -449,3 +449,41 @@
 
 datum/reagent/drug/sanguinum/overdose(var/mob/living/carbon/M, var/alien)
 	M.adjustBrainLoss(5) // This is meant to be lethal. If you survive this give your doctor a pat on the back.
+	
+/datum/reagent/drug/scarlet
+	name = "Scarlet"
+	id = "Scarlet"
+	description = "Hyperzine is a highly effective, long lasting, muscle stimulant, but drains the body. Also promotes muscle regrowth. Will worsen injuries."
+	taste_description = "acid"
+	reagent_state = LIQUID
+	color = "#FF3300"
+	metabolism = REM * 0.2
+	overdose = REAGENTS_OVERDOSE * 0.66
+	withdrawal_threshold = 10
+	nerve_system_accumulations = 55
+	reagent_type = "Drug/Stimulator"
+
+/datum/reagent/drug/hyperzine/affect_blood(mob/living/carbon/M, alien, effect_multiplier)
+	if(prob(5))
+	M.add_chemical_effect(CE_SPEEDBOOST, 0.6)
+	M.add_chemical_effect(CE_PULSE, 2)
+	M.nutrition = max(M.nutrition - 0.5 * effect_multiplier, 0)
+
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		//G for GUNS
+		var/obj/item/organ/internal/muscle/G = H.random_organ_by_process(OP_MUSCLE)
+		if(H && istype(H))
+			if(BP_IS_ROBOTIC(G))
+				return
+			if(G.damage > 0)
+				G.damage = max(G.damage - 0.5, 0)// small healing
+		if(H.health <= 50)
+			H.heal_organ_damage(-0.1, -0.1)
+
+/datum/reagent/drug/hyperzine/affect_ingest(var/mob/living/carbon/M, var/alien, var/effect_multiplier)
+	M.nutrition = max(M.nutrition - 1 * effect_multiplier, 0) //Drains the stomic faster
+
+/datum/reagent/drug/hyperzine/withdrawal_act(mob/living/carbon/M)
+	M.add_chemical_effect(CE_SLOWDOWN, 1)
+	M.add_chemical_effect(CE_PULSE, 1)
