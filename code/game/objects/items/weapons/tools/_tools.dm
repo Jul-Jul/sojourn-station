@@ -50,7 +50,6 @@
 	max_health = 500
 	var/health_threshold  = 40 // threshold in percent on which tool health stops dropping
 	var/lastNearBreakMessage = 0 // used to show messages that tool is about to break
-	var/isBroken = FALSE
 
 	var/force_upgrade_mults = 1
 
@@ -60,10 +59,14 @@
 	var/switched_on = FALSE	//Curent status of tool. Dont edit this in subtypes vars, its for procs only.
 	var/switched_on_qualities = list()	//This var will REPLACE tool_qualities when tool will be toggled on.
 	var/switched_on_force = null
+	var/switched_on_pen = null
+	var/switched_on_icon_state = null
+	var/switched_on_item_state = null
 	var/switched_off_qualities = list()	//This var will REPLACE tool_qualities when tool will be toggled off. So its possible for tool to have diferent qualities both for ON and OFF state.
 	var/create_hot_spot = FALSE	 //Set this TRUE to ignite plasma on turf with tool upon activation
 	var/glow_color = null	//Set color of glow upon activation, or leave it null if you dont want any light
 	var/last_tooluse = 0 //When the tool was last used for a tool operation. This is set both at the start of an operation, and after the doafter call
+	var/active_time = null //If set to an integer, the tool cannot be manually turned off, and will instead remain on for that many ticks.
 
 	//Vars for tool upgrades
 	var/precision = 0	//Subtracted from failure rates
@@ -116,11 +119,8 @@
 
 /obj/item/tool/proc/adjustToolHealth(amount, user)
 	health = min(max_health, max(max_health * (health_threshold/100), health + amount))
-	if(!isBroken && health == 0)
+	if(health == 0)
 		breakTool()
-		isBroken = TRUE
-	else if(isBroken && health > 0)
-		isBroken = FALSE
 
 
 //Ignite plasma around, if we need it
@@ -161,19 +161,15 @@
 		src.cell = C
 		update_icon()
 		return
-
-	if(isBroken)
-		to_chat(user, SPAN_WARNING("\The [src] is broken."))
-		return
 	.=..()
 
 //Turning it on/off
 /obj/item/tool/attack_self(mob/user)
-	if(isBroken)
-		to_chat(user, SPAN_WARNING("\The [src] is broken."))
-		return
 	if(toggleable)
 		if(switched_on)
+			if(active_time)
+				to_chat(user, SPAN_NOTICE("You can't turn off \the [src] manually!"))
+				return FALSE
 			turn_off(user)
 		else
 			turn_on(user)
@@ -426,7 +422,7 @@
 	fail_chance = fail_chance - get_tool_quality(required_quality) - stat_modifer
 
 	// handle tool breaking
-	if(T && T.health == 0)
+	if(T && T.health <= 0)
 		T.breakTool(user)
 		return TOOL_USE_FAIL
 	else if(T && !T.health_threshold)
@@ -484,7 +480,7 @@
 		var/obj/machinery/door/airlock/AD = loc
 		AD.take_out_wedged_item()
 	playsound(get_turf(src), 'sound/effects/impacts/thud1.ogg', 50, 1 -3)
-	isBroken = TRUE
+	qdel(src)
 	return
 
 /******************************
@@ -691,12 +687,23 @@
 		force = switched_on_force
 		if(wielded)
 			force *= 1.3
+	if(switched_on_pen)
+		armor_penetration = switched_on_pen
 	if(glow_color)
 		set_light(l_range = 1.7, l_power = 1.3, l_color = glow_color)
+	if(switched_on_icon_state)
+		icon_state = switched_on_icon_state
+	if(switched_on_item_state)
+		item_state = switched_on_item_state
 	START_PROCESSING(SSobj, src)
 	update_icon()
 	update_wear_icon()
-	return TRUE
+	if(!active_time)
+		return TRUE
+	else
+		spawn(active_time)
+			to_chat(user, SPAN_NOTICE("\The [src] turns off automatically."))
+			turn_off()
 
 /obj/item/tool/proc/turn_off(var/mob/user)
 	if(user)
@@ -704,9 +711,16 @@
 	switched_on = FALSE
 	STOP_PROCESSING(SSobj, src)
 	tool_qualities = switched_off_qualities
-	force = initial(force)
+	if(switched_on_force)
+		force = initial(force)
+	if(switched_on_pen)
+		armor_penetration = initial(armor_penetration)
 	if(glow_color)
 		set_light(l_range = 0, l_power = 0, l_color = glow_color)
+	if(switched_on_icon_state)
+		icon_state = initial(icon_state)
+	if(switched_on_item_state)
+		icon_state = initial(item_state)
 	update_icon()
 	update_wear_icon()
 
@@ -896,16 +910,13 @@
 
 //Recharge the fuel at fueltank, also explode if switched on
 /obj/item/tool/afterattack(obj/O, mob/user, proximity)
-	// i assume tape cant be broken
-	if(isBroken)
-		to_chat(user, SPAN_WARNING("\The [src] is broken."))
-		return
 	if(use_fuel_cost)
 		if(!proximity) return
 		if((istype(O, /obj/structure/reagent_dispensers/fueltank) || istype(O, /obj/item/weldpack)) && get_dist(src,O) <= 1 && !has_quality(QUALITY_WELDING))
 			O.reagents.trans_to_obj(src, max_fuel)
 			to_chat(user, SPAN_NOTICE("[src] refueled"))
 			playsound(src.loc, 'sound/effects/refill.ogg', 50, 1, -6)
+			update_icon()
 			return
 		else if((istype(O, /obj/structure/reagent_dispensers/fueltank) || istype(O, /obj/item/weldpack)) && get_dist(src,O) <= 1 && has_quality(QUALITY_WELDING))
 			message_admins("[key_name_admin(user)] triggered an explosion with a welding tool.")
@@ -960,9 +971,6 @@
 
 //Triggers degradation and resource use upon attacks
 /obj/item/tool/resolve_attackby(atom/A, mob/user, params)
-	if(isBroken)
-		to_chat(user, SPAN_WARNING("\The [src] is broken."))
-		return
 	.=..()
 	//If the parent return value is true, then there won't be an attackby
 	//If there will be an attackby, we'll handle it there
@@ -982,7 +990,7 @@
 			return
 		var/safety = H.eyecheck()
 		switch(safety)
-			if(FLASH_PROTECTION_MODERATE)
+			if(FLASH_PROTECTION_MINOR)
 				to_chat(H, SPAN_WARNING("Your eyes sting a little."))
 				E.damage += rand(1, 2)
 				if(E.damage > 12)
@@ -996,15 +1004,12 @@
 				to_chat(H, SPAN_DANGER("Your equipment intensify the welder's glow. Your eyes itch and burn severely."))
 				H.eye_blurry += rand(12,20)
 				E.damage += rand(12, 16)
-		if(safety<FLASH_PROTECTION_MAJOR)
+		if(safety<FLASH_PROTECTION_MODERATE)
 			if(E.damage > 10)
 				to_chat(user, SPAN_WARNING("Your eyes are really starting to hurt. This can't be good for you!"))
 
 
 /obj/item/tool/attack(mob/living/M, mob/living/user, var/target_zone)
-	if(isBroken)
-		to_chat(user, SPAN_WARNING("\The [src] is broken."))
-		return
 	if((user.a_intent == I_HELP) && ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/external/S = H.organs_by_name[user.targeted_organ]

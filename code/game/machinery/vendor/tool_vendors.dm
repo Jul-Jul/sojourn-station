@@ -12,6 +12,8 @@
 		)
 	product_ads = "Only the finest!;Have some tools.;The most robust equipment.;The finest gear in space!"
 	auto_price = FALSE
+	give_discounts = FALSE
+	give_discount_points = FALSE
 
 /obj/machinery/vending/tool
 	name = "YouTool"
@@ -60,6 +62,8 @@
 	icon_state = "engivend"
 	icon_deny = "engivend-deny"
 	products = list(/obj/item/clothing/glasses/powered/meson = 2,
+					/obj/item/clothing/glasses/welding = 2,
+					/obj/item/clothing/head/welding = 2,
 					/obj/item/tool/multitool = 4,
 					/obj/item/airlock_electronics = 10,
 					/obj/item/circuitboard/apc = 10,
@@ -137,6 +141,8 @@
 					/obj/structure/closet = 3,
 					/obj/structure/closet/crate = 3)
 	auto_price = FALSE
+	give_discounts = FALSE
+	give_discount_points = FALSE
 
 /obj/machinery/vending/powermat
 	name = "Lonestar Power-Mat"
@@ -228,6 +234,8 @@
 					/obj/item/device/assembly/prox_sensor = 6,
 					/obj/item/device/assembly/igniter = 6)
 	auto_price = FALSE
+	give_discounts = FALSE
+	give_discount_points = FALSE
 
 //This one's from bay12
 /obj/machinery/vending/robotics

@@ -317,7 +317,7 @@
 			to_chat(usr, SPAN_DANGER("There is \a [I] sticking out of it."))
 	return
 
-#define MAX_MUSCLE_SPEED -0.5
+#define MAX_MUSCLE_SPEED -0.3 //Soj edit from -0.5, slowdown!
 
 /obj/item/organ/external/proc/get_tally()
 	if(is_broken() && !(status & ORGAN_SPLINTED))
@@ -341,11 +341,11 @@
 		. += 0.5
 
 
-	var/nerve_eff = max(owner.get_specific_organ_efficiency(OP_NERVE, organ_tag),1)
-	var/limb_eff = owner.get_limb_efficiency()
-	var/leg_eff = (limb_eff/100) - (limb_eff / nerve_eff)//Need more nerves to control those new muscles
+	var/nerve_efficiency = max(owner.get_specific_organ_efficiency(OP_NERVE, organ_tag),1)
+	var/limb_efficiency = owner.get_limb_efficiency()
+	var/leg_efficiency = (limb_efficiency/100) - (limb_efficiency / nerve_efficiency)//Need more nerves to control those new muscles
 
-	. += max(-(leg_eff/2), MAX_MUSCLE_SPEED)
+	. += max(-(leg_efficiency/2), MAX_MUSCLE_SPEED)
 
 	. += tally
 
@@ -483,7 +483,7 @@ This function completely restores a damaged organ to perfect condition.
 
 //Determines if we even need to process this organ.
 /obj/item/organ/external/proc/need_process()
-	if(status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_BROKEN|ORGAN_DESTROYED|ORGAN_SPLINTED|ORGAN_DEAD|ORGAN_MUTATED))
+	if(status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_BROKEN|ORGAN_SPLINTED|ORGAN_DEAD|ORGAN_MUTATED))
 		return TRUE
 	if((brute_dam || burn_dam) && !BP_IS_ROBOTIC(src)) //Robot limbs don't autoheal and thus don't need to process when damaged
 		return TRUE
@@ -527,8 +527,8 @@ This function completely restores a damaged organ to perfect condition.
 			if(owner && (owner.status_flags & REBUILDING_ORGANS))
 				return
 			for(var/obj/item/organ/external/limb in children)
-				limb.droplimb(FALSE, DROPLIMB_EDGE)
-			droplimb(FALSE, DROPLIMB_BLUNT)
+				limb.droplimb(FALSE, DISMEMBER_METHOD_EDGE)
+			droplimb(FALSE, DISMEMBER_METHOD_BLUNT)
 			owner?.gib() //In theory if droplimb is succesfull, the organ will have no owner and gib() should only get called if droplimb fails(Like on the upper body)
 
 //Updating germ levels. Handles organ germ levels and necrosis.
@@ -872,8 +872,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(owner) owner.update_body()
 
 /obj/item/organ/external/proc/unmutate()
-	status &= ~ORGAN_MUTATED
-	if(owner) owner.update_body()
+	if(!BP_IS_DEFORMED(src) && !BP_IS_PROSTHETIC(src))
+		src.status &= ~ORGAN_MUTATED
+		if(owner) owner.update_body()
 
 /obj/item/organ/external/proc/get_damage()	//returns total damage
 	return max(brute_dam + burn_dam - perma_injury, perma_injury)	//could use max_damage?

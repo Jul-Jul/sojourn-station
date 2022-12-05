@@ -4,7 +4,7 @@
 	path = /obj/item/clothing/suit/rank/botanist
 	slot = slot_wear_suit
 	sort_category = "Suits and Overwear"
-	cost = 1
+	cost = 0
 
 /datum/gear/suit/hell_apron
 	display_name = "lonestar black apron"
@@ -77,6 +77,10 @@
 	path = /obj/item/clothing/suit/storage/miljacket
 	flags = GEAR_HAS_TYPE_SELECTION
 
+/datum/gear/suit/soyfedjacket
+	display_name = "old SolFed military jacket"
+	path = /obj/item/clothing/suit/storage/toggle/miljacket_soyfed
+
 /datum/gear/suit/punk_vest
 	display_name = "punk vest"
 	path = /obj/item/clothing/suit/storage/punkvest
@@ -93,6 +97,10 @@
 /datum/gear/suit/kimono
 	display_name = "kimono"
 	path = /obj/item/clothing/suit/fluff/kimono
+
+/datum/gear/suit/miko
+	display_name = "purple miko dress"
+	path = /obj/item/clothing/suit/fluff/miko
 
 /datum/gear/suit/labcoat
 	display_name = "labcoat"

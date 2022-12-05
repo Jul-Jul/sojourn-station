@@ -27,10 +27,13 @@
 	gun_tags = list(GUN_PROJECTILE, GUN_SILENCABLE, GUN_CALIBRE_9MM, GUN_SCOPE, GUN_MAGWELL)
 
 	init_firemodes = list(
-		FULL_AUTO_400_NOLOSS,
+		FULL_AUTO_200_NOLOSS,
 		SEMI_AUTO_NODELAY,
 		BURST_3_ROUND_NOLOSS
 		)
+
+	wield_delay = 0.5 SECOND
+	wield_delay_factor = 0.1 // 10 vig
 
 /obj/item/gun/projectile/automatic/c20r/update_icon()
 	cut_overlays()
@@ -45,7 +48,7 @@
 	update_icon()
 
 /obj/item/gun/projectile/automatic/c20r/sci
-	name = "bullpip SMG"
+	name = "Soteria \"Bullpip\" SMG"
 	desc = "A Soteria copy of the Scarborough Arms C-20r, not quite as good at punching through armor nor as deadly, but still reliable and versatile none the less as its often nicknamed the bullpip. Uses 9mm."
 	icon = 'icons/obj/guns/projectile/si_cr20.dmi'
 	damage_multiplier = 1

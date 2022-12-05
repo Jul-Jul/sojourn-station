@@ -78,7 +78,7 @@
 
 	//Damage vars
 	var/force = 0	//How much damage the weapon deals
-	var/embed_mult = 0.5 //Multiplier for the chance of embedding in mobs. Set to zero to completely disable embedding
+	var/embed_mult = 1 //Multiplier for the chance of embedding in mobs. Set to zero to completely disable embedding
 	var/structure_damage_factor = STRUCTURE_DAMAGE_NORMAL	//Multiplier applied to the damage when attacking structures and machinery
 
 	var/post_penetration_dammult = 1 //how much damage do we do post-armor-penetation
@@ -126,6 +126,8 @@
 
 /obj/item/Destroy()
 	QDEL_NULL(hidden_uplink)
+	if(blood_overlay && items_blood_overlay_by_type[type] == blood_overlay)
+		LAZYREMOVE(items_blood_overlay_by_type, type)
 	QDEL_NULL(blood_overlay)
 	QDEL_NULL(action)
 	if(ismob(loc))

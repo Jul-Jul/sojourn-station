@@ -41,6 +41,7 @@
 	var/move_delay = 1
 	var/fire_sound = 'sound/weapons/Gunshot.ogg'
 	var/modded_sound = FALSE
+	var/fire_stacks = 0 //Should we apply fire stacks on hit?
 
 	var/fire_sound_text = "gunshot"
 	var/rigged = FALSE
@@ -85,7 +86,7 @@ For the sake of consistency, I suggest always rounding up on even values when ap
 	var/dna_lock_sample = "not_set" //real_name from mob who installed DNA-lock
 	var/dna_user_sample = "not_set" //Current user's real_name
 
-	var/next_fire_time = 0
+	var/can_fire_next = 1
 
 	var/sel_mode = 1 //index of the currently selected mode
 	var/list/firemodes = list()
@@ -125,6 +126,9 @@ For the sake of consistency, I suggest always rounding up on even values when ap
 	var/folded = TRUE //IS are stock folded? - and that is yes we start folded
 	var/currently_firing = FALSE
 
+	var/wield_delay = 0 // Gun wielding delay , generally in seconds.
+	var/wield_delay_factor = 0 // A factor that characterizes weapon size , this makes it require more vig to insta-wield this weapon or less , values below 0 reduce the vig needed and above 1 increase it
+
 	//Gun numbers and stuf
 	var/serial_type = "INDEX" // Index will be used for detective scanners, if there is a serial type , the gun will add a number onto its final , if none , it won;'t show on examine
 	var/serial_shown = TRUE
@@ -134,6 +138,18 @@ For the sake of consistency, I suggest always rounding up on even values when ap
 	var/overcharge_rate = 1 //Base overcharge additive rate for the gun
 	var/overcharge_level = 0 //What our current overcharge level is. Peaks at overcharge_max
 	var/overcharge_max = 10
+
+/obj/item/gun/wield(mob/user)
+	if(!wield_delay)
+		..()
+		return
+	var/calculated_delay = wield_delay
+	if(ishuman(user))
+		calculated_delay = wield_delay - (wield_delay * (user.stats.getStat(STAT_VIG) / (100 * wield_delay_factor))) // wield delay - wield_delay * user vigilance / 100 * wield_factor
+	if (calculated_delay > 0 && do_after(user, calculated_delay, immobile = FALSE))
+		..()
+	else if (calculated_delay <= 0)
+		..()
 
 /obj/item/gun/proc/loadAmmoBestGuess()
 	return
@@ -393,10 +409,14 @@ For the sake of consistency, I suggest always rounding up on even values when ap
 			return FALSE
 	return TRUE
 
+/obj/item/gun/proc/ready_to_shoot()
+	can_fire_next = TRUE
+
+
 /obj/item/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, extra_proj_damagemult = 0, extra_proj_penmult = 0, extra_proj_wallbangmult = 0, extra_proj_stepdelaymult = 0, multiply_projectile_agony = 0, multiply_pve_damage = 0)
 	if(!user || !target) return
 
-	if((world.time < next_fire_time) || currently_firing)
+	if(!can_fire_next || currently_firing)
 		if (!suppress_delay_warning && world.time % 3) //to prevent spam
 			to_chat(user, SPAN_WARNING("[src] is not ready to fire again!"))
 		return
@@ -411,7 +431,8 @@ For the sake of consistency, I suggest always rounding up on even values when ap
 
 	var/shoot_time = (burst - 1)* burst_delay
 	user.setClickCooldown(shoot_time) //no clicking on things while shooting
-	next_fire_time = world.time + shoot_time
+	can_fire_next = FALSE
+	addtimer(CALLBACK(src, /obj/item/gun/proc/ready_to_shoot), fire_delay)
 
 	if(muzzle_flash)
 		set_light(muzzle_flash)
@@ -454,6 +475,9 @@ For the sake of consistency, I suggest always rounding up on even values when ap
 
 		projectile.multiply_pve_damage(proj_pve_damage_multiplier)
 
+		if(fire_stacks)
+			projectile.add_fire_stacks(fire_stacks)
+
 		if(muzzle_flash)
 			set_light(muzzle_flash)
 
@@ -490,7 +514,7 @@ For the sake of consistency, I suggest always rounding up on even values when ap
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	user.set_move_cooldown(move_delay)
 	if(!twohanded && user.stats.getPerk(PERK_GUNSLINGER))
-		next_fire_time = world.time + fire_delay - fire_delay * 0.33
+		addtimer(CALLBACK(src, /obj/item/gun/proc/ready_to_shoot), min(0, (fire_delay - fire_delay * 0.33)))
 
 	if((CLUMSY in user.mutations) && prob(40)) //Clumsy handling
 		var/obj/P = consume_next_projectile()

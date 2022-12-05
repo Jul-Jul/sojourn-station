@@ -63,12 +63,12 @@ var/global/blackshield_max_energy //Maximaum combined energy of all teleporters
 		/obj/item/gun/projectile/boltgun/lever/shotgun/bounty = 700,
 		/obj/item/gun/projectile/automatic/sts/lrifle = 200,
 		/obj/item/gun/projectile/automatic/sts/rifle = 300,
-		/obj/item/gun/projectile/automatic/sts/hrifle = 500,
+		/obj/item/gun/projectile/automatic/omnirifle = 500,
 		/obj/item/gun/projectile/automatic/lmg/saw = 500,
 		/obj/item/gun/projectile/boltgun = 50,
 		/obj/item/gun/projectile/automatic/duty = 350,
 		/obj/item/gun/projectile/automatic/nordwind/watchtower = 600,
-		/obj/item/gun/projectile/automatic/blackguard = 750,
+		/obj/item/gun/projectile/automatic/omnirifle/scoped = 750,
 		/obj/item/gun/projectile/automatic/drozd/NM_colony = 300,
 		/obj/item/gun/projectile/automatic/ppsh/NM_colony = 450,
 		/obj/item/gun/projectile/automatic/ak47/NM_colony = 325,
@@ -88,7 +88,8 @@ var/global/blackshield_max_energy //Maximaum combined energy of all teleporters
 		/obj/item/tool/baton = 200,
 		/obj/item/storage/firstaid/surgery/traitor = 250, //Advanced tools inside
 		/obj/item/computer_hardware/hard_drive/portable/design/blackshield = 500,
-		/obj/item/storage/firstaid/blackshield/large = 500
+		/obj/item/storage/firstaid/blackshield/large = 500,
+		/obj/item/stock_parts/blackshield/stskit = 750 //For making STS PARAs
 		)
 	var/entropy_value = 1 //It is still bluespace
 
